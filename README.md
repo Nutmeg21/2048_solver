@@ -39,8 +39,8 @@ You must enable **USB Debugging** on your Android device:
 Clone the repository and install dependencies:
 
 ```bash
-git clone [https://github.com/YourUsername/2048-ai-solver.git](https://github.com/YourUsername/2048-ai-solver.git)
-cd 2048-ai-solver
+git clone [https://github.com/Nutmeg21/2048_solver.git](https://github.com/Nutmeg21/2048_solver.git)
+cd 2048_solver
 pip install -r requirements.txt
 ```
 
