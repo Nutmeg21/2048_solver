@@ -53,7 +53,7 @@ pip install -r requirements.txt
     # Should show: <serial_number> device
     ```
 
-## 📸 How to Create Tile Assets
+## Creating Tile Assets
 
 For the AI to "see" the board, it needs reference images for the tiles.
 
