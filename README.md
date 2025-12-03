@@ -1,23 +1,21 @@
-# 2048 Solver
+# 2048 AI Solver For Android
 ## Also doubles as KFC K-Town Combo Challenge Solver
----
-# Android Automation Bot (ADB + OpenCV)
 
-A lightweight Python framework for automating Android apps and games using **ADB (Android Debug Bridge)** and **Computer Vision**.
+An intelligent Python bot that uses **Computer Vision (OpenCV)** to read the 2048 game board on your Android phone and **AI Algorithms** to determine the optimal move, executing swipes automatically via **ADB**.
 
-This project allows you to write scripts that "see" your phone screen using OpenCV and "touch" the screen using ADB, enabling the creation of game bots, testing scripts, or general automation tasks.
+This project separates the "Eyes" (Screen Reading), "Brain" (AI Logic), and "Hands" (ADB Actions) to solve the game efficiently.
 
-## 📁 Project Structure
+## Project Structure
 
-* **`main.py`** (The Brain): Contains the main logic loop, decision making, and timing.
-* **`controller.py`** (The Hands): Handles ADB connection, raw screen capture streaming, and input simulation (taps/swipes).
-* **`screen_reader.py`** (The Eyes): Wraps OpenCV to handle image recognition and pixel analysis.
-* **`assets/`**: Folder containing the reference images (templates) the bot looks for.
+* **`main.py`** (The Brain): Coordinates the loop: Read Board -> Run AI Algorithm -> Execute Swipe.
+* **`controller.py`** (The Hands): Handles ADB connection, high-speed screen capture, and sending physical swipe gestures.
+* **`screen_reader.py`** (The Eyes): Uses OpenCV to recognize the 4x4 grid and identify the number on each tile.
+* **`assets/`**: Contains reference images of the tiles (2, 4, 8, 16...) for template matching.
 
-## 🚀 Prerequisites
+## Prerequisites
 
 ### Hardware
-* An Android Device (Phone, Tablet, or Emulator).
+* An Android Device (Phone, Tablet, or Emulator) with the 2048 game installed.
 * A USB Data Cable.
 
 ### Software
@@ -27,7 +25,7 @@ This project allows you to write scripts that "see" your phone screen using Open
     * *Mac:* `brew install android-platform-tools`
     * *Linux:* `sudo apt install adb`
 
-## 🛠️ Setup Guide
+## Setup Guide
 
 ### 1. Phone Configuration
 You must enable **USB Debugging** on your Android device:
@@ -41,8 +39,8 @@ You must enable **USB Debugging** on your Android device:
 Clone the repository and install dependencies:
 
 ```bash
-git clone [https://github.com/YourUsername/your-repo-name.git](https://github.com/YourUsername/your-repo-name.git)
-cd your-repo-name
+git clone [https://github.com/YourUsername/2048-ai-solver.git](https://github.com/YourUsername/2048-ai-solver.git)
+cd 2048-ai-solver
 pip install -r requirements.txt
 ```
 
@@ -55,21 +53,20 @@ pip install -r requirements.txt
     # Should show: <serial_number> device
     ```
 
-## 📸 How to Create Assets
+## 📸 How to Create Tile Assets
 
-The bot relies on **Template Matching**. To teach the bot to click a button, you cannot simply download an image from Google; you must capture what your phone screen actually looks like.
+For the AI to "see" the board, it needs reference images for the tiles.
 
-1.  Open the app on your phone to the specific screen.
-2.  Take a raw ADB screenshot (crucial for color accuracy):
+1.  Open the 2048 app on your phone.
+2.  Take a raw ADB screenshot (crucial for color/pixel accuracy):
     ```bash
-    adb exec-out screencap -p > reference_screen.png
+    adb exec-out screencap -p > board_reference.png
     ```
-3.  Open `reference_screen.png` in an image editor.
-4.  **Crop** the specific button or icon you want to interact with.
-5.  Save the cropped image to the `assets/` folder (e.g., `assets/start_button.png`).
-6.  Reference the filename in `main.py`.
+3.  Open `board_reference.png` in an image editor.
+4.  **Crop** distinct images for each tile number (2, 4, 8, 16, etc.) and the empty grid background.
+5.  Save them to the `assets/` folder (e.g., `assets/tile_2.png`, `assets/tile_4.png`).
 
-## 🏃 Usage
+## How To Use
 
 Run the main script:
 
@@ -77,13 +74,19 @@ Run the main script:
 python main.py
 ```
 
+The bot will automatically:
+1.  Detect the current state of the board.
+2.  Calculate the best move using the AI algorithm.
+3.  Swipe the screen.
+4.  Repeat until game over or 2048 is reached.
+
 To stop the bot, press `Ctrl+C` in the terminal.
 
-## ⚠️ Common Issues
+## Common Issues
 
-**Bot connects but can't find images**
-* **Cause:** Images were likely taken using the phone's hardware buttons (Power+VolDown) or downloaded from the web.
-* **Fix:** You **must** use `adb exec-out screencap -p` to take screenshots. This ensures the resolution and color formatting match exactly what the bot sees.
+**Bot makes random moves / Can't read board**
+* **Cause:** The asset images might not match the current screen resolution or theme.
+* **Fix:** Ensure you created assets using `adb exec-out screencap` and not by downloading generic images from the internet.
 
 **`device unauthorized`**
 * **Cause:** The computer is not trusted by the phone.
