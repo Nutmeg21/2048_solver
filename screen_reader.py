@@ -52,62 +52,98 @@ class ScreenReader:
 
     def find_template(self, screen_img, template_path, threshold=0.8):
         """
-        Locates a smaller image (template) inside the larger screen image.
-        
-        Args:
-            screen_img: The main screen image (from capture_screen).
-            template_path: Path to the .png file of the button/icon to find.
-            threshold: Confidence level (0.0 to 1.0). Higher = stricter match.
-            
-        Returns:
-            tuple: (x, y) coordinates of the center of the match, or None if not found.
+        Locates a template image inside the screen image.
+        Returns (x, y) center coordinates or None.
         """
         if screen_img is None:
             return None
 
-        # Load the template image
-        # cv2.IMREAD_COLOR loads it in BGR format
         template = cv2.imread(template_path, cv2.IMREAD_COLOR)
-        
         if template is None:
             print(f"Error: Could not load template file: {template_path}")
             return None
 
-        # Get dimensions of the template
         h, w = template.shape[:2]
-
-        # Perform Template Matching
         result = cv2.matchTemplate(screen_img, template, cv2.TM_CCOEFF_NORMED)
-        
-        # Find the best match position
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
-        # Check if the best match is good enough
         if max_val >= threshold:
-            # max_loc is the top-left corner. Calculate the center.
             center_x = int(max_loc[0] + w / 2)
             center_y = int(max_loc[1] + h / 2)
             return (center_x, center_y)
         
         return None
 
-    def get_pixel_color(self, screen_img, x, y):
+    def get_board_state(self, screen_img, grid_config, assets):
         """
-        Gets the BGR color of a specific pixel.
+        Slices the screen into 16 tiles and identifies the number in each.
         
+        Args:
+            screen_img: The full screen image.
+            grid_config: Dictionary with 'start_x', 'start_y', 'step'.
+            assets: Dictionary mapping numbers to their image paths (e.g., {2: "assets/2.png"}).
+            
         Returns:
-            tuple: (Blue, Green, Red) values (0-255).
+            A 4x4 list of lists representing the board (0 for empty).
         """
         if screen_img is None:
-            return None
-            
-        try:
-            # OpenCV images are accessed as array[row, col] -> [y, x]
-            # Returns [Blue, Green, Red]
-            return screen_img[y, x]
-        except IndexError:
-            print(f"Error: Coordinates ({x}, {y}) are out of bounds.")
-            return None
+            return [[0]*4 for _ in range(4)]
+
+        board = []
+        
+        # Dimensions for cropping a single tile (approximate, slightly smaller than full tile to avoid borders)
+        # You might need to adjust this size based on your resolution
+        CROP_SIZE = 80 
+        OFFSET = CROP_SIZE // 2 # To center the crop
+
+        start_x = grid_config['start_x']
+        start_y = grid_config['start_y']
+        step = grid_config['step']
+
+        for row in range(4):
+            row_data = []
+            for col in range(4):
+                # Calculate the center of the current tile
+                center_x = start_x + (col * step)
+                center_y = start_y + (row * step)
+                
+                # Crop a small square around the center
+                y1 = int(center_y - OFFSET)
+                y2 = int(center_y + OFFSET)
+                x1 = int(center_x - OFFSET)
+                x2 = int(center_x + OFFSET)
+                
+                # Safety check to ensure we don't crop outside image
+                if y1 < 0 or x1 < 0:
+                    row_data.append(0)
+                    continue
+
+                tile_img = screen_img[y1:y2, x1:x2]
+                
+                # Identify the number
+                detected_num = 0
+                best_match = 0
+                
+                # Check this tile against all known number assets
+                for num, path in assets.items():
+                    # We reuse find_template logic but on the tiny tile image
+                    # We use a lower threshold because we are matching "close enough"
+                    tmpl = cv2.imread(path, cv2.IMREAD_COLOR)
+                    if tmpl is None: continue
+                    
+                    # Resize template if necessary or just match
+                    # Ideally, your assets are already cropped to size.
+                    res = cv2.matchTemplate(tile_img, tmpl, cv2.TM_CCOEFF_NORMED)
+                    _, max_val, _, _ = cv2.minMaxLoc(res)
+                    
+                    if max_val > 0.8 and max_val > best_match:
+                        best_match = max_val
+                        detected_num = num
+                
+                row_data.append(detected_num)
+            board.append(row_data)
+        
+        return board
 
 # Quick test if run directly
 if __name__ == "__main__":
