@@ -1,15 +1,14 @@
 # 2048 AI Solver For Android
 ## Also doubles as KFC K-Town Combo Challenge Solver
 
-An intelligent Python bot that uses **Computer Vision (OpenCV)** to read the 2048 game board on your Android phone and **AI Algorithms** to determine the optimal move, executing swipes automatically via **ADB**.
-
-This project separates the "Eyes" (Screen Reading), "Brain" (AI Logic), and "Hands" (ADB Actions) to solve the game efficiently.
+An intelligent Python bot that uses **Computer Vision (OpenCV)** to read the 2048 game board on your Android phone and **Expectimax Algorithm** to determine the optimal move, executing swipes automatically via **ADB**.
 
 ## Project Structure
 
-* **`main.py`** (The Brain): Coordinates the loop: Read Board -> Run AI Algorithm -> Execute Swipe.
-* **`controller.py`** (The Hands): Handles ADB connection, high-speed screen capture, and sending physical swipe gestures.
-* **`screen_reader.py`** (The Eyes): Uses OpenCV to recognize the 4x4 grid and identify the number on each tile.
+* **`main.py`** : Coordinates the loop: Read Board -> Call Algorithm -> Execute Swipe.
+* **`solver.py`** : Receives board condition and runs recursive expectimax algorithm that returns best move.
+* **`controller.py`** : Handles ADB connection, high-speed screen capture, and sending physical swipe gestures.
+* **`screen_reader.py`** : Uses OpenCV to recognize the 4x4 grid and identify the number on each tile.
 * **`assets/`**: Contains reference images of the tiles (2, 4, 8, 16...) for template matching.
 
 ## Prerequisites
@@ -91,3 +90,15 @@ To stop the bot, press `Ctrl+C` in the terminal.
 **`device unauthorized`**
 * **Cause:** The computer is not trusted by the phone.
 * **Fix:** Unplug the USB cable, plug it back in, and watch your phone screen for the "Allow USB Debugging" prompt.
+
+## Future Improvements
+
+**Decrease computing time**
+* Read screen state by raw header
+* Detect average rgb value of corner pixel instead of matching whole tile (Try vector colour matching)
+* Use persistant shell for adb processes
+
+**Revise heuristic scoring system**
+* Incur penalties for having large value tiles in the middle of the grid
+* Check for monotonicity (Numbers in row/column either increasing or decreasing) - No trapped tiles
+* Highest value tile in the corner
