@@ -94,7 +94,7 @@ class Solver:
             # If nothing changes
             if new_board == board:
                 continue
-            # Set depth here (depth = 3 for optimal balance between speed and accuracy)
+                
             score = self.expectimax(new_board, depth, turn="COMPUTER")
             if score > best_score:
                 best_score = score
@@ -113,9 +113,8 @@ class Solver:
         if board_tuple in self.transposition_table:
             entry = self.transposition_table[board_tuple]
             
-            # KEY CHECK: Is the cached result precise enough?
-            # If we need Depth 4, but have a cached result from Depth 2, 
-            # the cache is too shallow/inaccurate. We must ignore it and recalculate.
+            # Determine if we have enough depth in this tree
+            # if depth too shallow, then we recalculate it
             if entry['depth'] >= depth: 
                 return entry['score']
 
@@ -139,7 +138,7 @@ class Solver:
             empty_cells = self.get_empty_cells(board)            
 
             # Optimization: If too many empty cells, tree is too big. 
-            # Only check the first few to save speed (optional)
+            # Only check the first few to save speed
             if len(empty_cells) > 6:
                 empty_cells = empty_cells[:6]
 
@@ -180,32 +179,25 @@ class Solver:
         """
         Returns a NEW board state after moving in the given direction.
         """
-        # 1. Create a Deep Copy
-        # Using list comprehension is faster than deepcopy library for simple 2D lists
+        # Create deep copy using list
         temp_board = [row[:] for row in board]
 
+        # Only merge left is programmed
+        # For other directions, rotate the board then merge left again
         if direction == 'left':
-            # Logic: Just apply merge on every row
             temp_board = [self.merge_left(row) for row in temp_board]
 
         elif direction == 'right':
-            # Logic: Reverse -> Merge Left -> Reverse Back
-            # [2, 0, 0, 0] -> [0, 0, 0, 2] -> Merge -> [2, 0, 0, 0]
             temp_board = self.reverse(temp_board)
             temp_board = [self.merge_left(row) for row in temp_board]
             temp_board = self.reverse(temp_board)
 
         elif direction == 'up':
-            # Logic: Transpose -> Merge Left -> Transpose Back
-            # Columns become rows. Moving "Left" on a transposed board is "Up".
             temp_board = self.transpose(temp_board)
             temp_board = [self.merge_left(row) for row in temp_board]
             temp_board = self.transpose(temp_board)
 
         elif direction == 'down':
-            # Logic: Transpose -> Reverse -> Merge Left -> Reverse -> Transpose
-            # 1. Turn columns into rows (Transpose)
-            # 2. Flip them (Reverse) so the "Bottom" is now on the "Left"
             temp_board = self.transpose(temp_board)
             temp_board = self.reverse(temp_board)
             temp_board = [self.merge_left(row) for row in temp_board]
@@ -216,7 +208,6 @@ class Solver:
     
     def transpose(self, board):
         """Swaps rows and columns (Rotates the board diagonal)."""
-        # zip(*board) unzips the rows and pairs them by index
         return [list(row) for row in zip(*board)]
 
     def reverse(self, board):
@@ -229,20 +220,20 @@ class Solver:
         Input:  [2, 2, 0, 4]
         Output: [4, 4, 0, 0]
         """
-        # 1. Compress (remove 0s)
+        # Compress (remove 0s)
         new_row = [i for i in row if i != 0]
         
-        # 2. Merge
+        # Merge
         for i in range(len(new_row) - 1):
             # If current equals next, and current hasn't been merged (value check)
             if new_row[i] == new_row[i+1]:
                 new_row[i] *= 2
                 new_row[i+1] = 0 # Mark as empty so it doesn't merge again
         
-        # 3. Compress again (remove the new 0s created by merging)
+        # Compress again by removing the new 0s created by merging
         new_row = [i for i in new_row if i != 0]
         
-        # 4. Pad with 0s to maintain length of 4
+        # Pad with 0s to maintain length of 4
         return new_row + [0] * (4 - len(new_row))
         
     def get_empty_cells(self, board):
