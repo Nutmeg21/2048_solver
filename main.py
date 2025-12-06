@@ -1,7 +1,7 @@
 import time
-import random
 import controller
 from screen_reader import ScreenReader
+from solver import Solver
 
 # --- CONFIGURATION ---
 # The path to the small image you cropped in Step 1
@@ -41,11 +41,10 @@ def main():
     print(f"Connected to {devices[0]}")
 
     vision = ScreenReader()
+    solver = Solver()
 
     try:
         while True:
-            # 1. CAPTURE: Get the current screen (Vision)
-            # We use the stream method because it's faster than saving files
             screen = controller.get_screen_stream()
             
             if screen is None:
@@ -53,49 +52,42 @@ def main():
                 time.sleep(1)
                 continue
 
-            # 2. ANALYZE: Look for the Start Button
-            # The '0.8' is confidence. 80% match required.
+            # Look for the Start Button
+            # 80% match required.
             button_pos = vision.find_template(screen, ASSET_START_BUTTON, threshold=0.8)
             
             if button_pos:
                 # button_pos is a tuple: (x, y) coordinates of the center of the button
                 print(f"I see the Start Button at {button_pos}! Tapping it now.")
-                
-                # 3. ACTION: Physical Tap (Hands)
+
                 controller.tap(button_pos[0], button_pos[1])
                 
                 # Wait a bit so we don't spam-click it while the animation plays
-                time.sleep(2) 
+                time.sleep(0.1) 
                 
-                # In the future: Switch to "Game Solver" logic here
                 print("Game started! Waiting for next instructions...")
             
             else:
-                #print("I don't see the Start Button. Scanning...")
+                # If don't see the start button, then start playing
 
                 print("Reading board...")
                 board = vision.get_board_state(screen, GRID_CONFIG, TILE_ASSETS)
                 
-                # Print board nicely to console
+                # Print board to console
                 print("\nCurrent Board:")
                 for row in board:
                     print(row)
 
-                time.sleep(4)
+                time.sleep(0.2)
     
-                swipe()
+                best_move = solver.get_best_move(board)
+                controller.swipe_direction(best_move)
 
             # Add a small delay to save CPU power
             time.sleep(0.2)
 
     except KeyboardInterrupt:
-        print("\nBot stopped by user.")
-
-def swipe():
-    random_move = random.choice(MOVES)
-    print(f"Swiping {random_move}")
-    controller.swipe_direction(random_move)
-    
+        print("\nBot stopped by user.")    
 
 if __name__ == "__main__":
     main()

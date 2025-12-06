@@ -24,7 +24,7 @@ def connect(host: str):
 def tap(x: int, y: int):
     subprocess.run(["adb", "shell", "input", "tap", str(x), str(y)])
 
-def swipe(x1: int, y1: int, x2: int, y2: int, duration: int = 200):
+def swipe(x1: int, y1: int, x2: int, y2: int, duration: int = 50):
     """
     Basic raw swipe command.
     Duration is in milliseconds (faster is better for 2048).
