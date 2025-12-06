@@ -70,76 +70,107 @@ class Solver:
 
         self.MOVES = ["up", "down", "left", "right"]
 
+        self.transposition_table = {}
+
     def get_best_move(self, board):
         best_score = -float('inf')
         best_move = None
+
+        # Memory management
+        if len(self.transposition_table) > 50000:
+            self.transposition_table = {}
+
+        # Dynamic depth
+        empty_count = len(self.get_empty_cells(board))
+        if empty_count <= 4:
+            depth = 6
+        elif empty_count <= 8:
+            depth = 5
+        else:
+            depth = 4
+
         for move in self.MOVES:
             new_board = self.simulate_move(board, move)
             # If nothing changes
             if new_board == board:
                 continue
             # Set depth here (depth = 3 for optimal balance between speed and accuracy)
-            score = self.expectimax(new_board, depth=5, turn="COMPUTER")
+            score = self.expectimax(new_board, depth, turn="COMPUTER")
             if score > best_score:
                 best_score = score
                 best_move = move
-        print(best_score)
+        # print(best_score)
         return best_move
     
     def expectimax(self, board, depth, turn):
         if depth == 0:
             return self.heuristic_score(board)
-        else:
-            if turn == "PLAYER":
-                max_score = -float('inf')
-                
-                for move in self.MOVES:
-                    new_board = self.simulate_move(board, move)
-                    # If nothing changes
-                    if new_board == board:
-                        continue
+        
+        # Convert board to hashable key
+        board_tuple = tuple(tuple(row) for row in board)
+        
+        # Check if this state exists in memory
+        if board_tuple in self.transposition_table:
+            entry = self.transposition_table[board_tuple]
+            
+            # KEY CHECK: Is the cached result precise enough?
+            # If we need Depth 4, but have a cached result from Depth 2, 
+            # the cache is too shallow/inaccurate. We must ignore it and recalculate.
+            if entry['depth'] >= depth: 
+                return entry['score']
 
-                    score = self.expectimax(new_board, depth - 1, "COMPUTER")
-                    if score > max_score:
-                        max_score = score
-                return max_score
-                     
-            elif turn == "COMPUTER":
-                total_score = 0
-                empty_cells = self.get_empty_cells(board)            
 
-                # Optimization: If too many empty cells, tree is too big. 
-                # Only check the first few to save speed (optional)
-                if len(empty_cells) > 6:
-                    empty_cells = empty_cells[:6]
+        if turn == "PLAYER":
+            max_score = -float('inf')
+            
+            for move in self.MOVES:
+                new_board = self.simulate_move(board, move)
+                # If nothing changes
+                if new_board == board:
+                    continue
 
-                # Game Over
-                if not empty_cells:
-                    return self.heuristic_score(board)
-                
-                for (r, c) in empty_cells:
-                    # Spawns a 2 (90% chance)
-                    new_board_with_2 = [row[:] for row in board]
-                    new_board_with_2[r][c] = 2
-                    score_2 = self.expectimax(new_board_with_2, depth - 1, "PLAYER")
-                    total_score += 0.9 * score_2
+                score = self.expectimax(new_board, depth - 1, "COMPUTER")
+                if score > max_score:
+                    max_score = score
+            return max_score
+                    
+        elif turn == "COMPUTER":
+            total_score = 0
+            empty_cells = self.get_empty_cells(board)            
 
-                    # Spawns a 4 (10% chance)
-                    new_board_with_4 = [row[:] for row in board]
-                    new_board_with_4[r][c] = 4
-                    score_4 = self.expectimax(new_board_with_4, depth - 1, "PLAYER")
-                    total_score += 0.1 * score_4
+            # Optimization: If too many empty cells, tree is too big. 
+            # Only check the first few to save speed (optional)
+            if len(empty_cells) > 6:
+                empty_cells = empty_cells[:6]
 
-                # Return average score
-                return total_score / len(empty_cells)
-    
+            # Game Over
+            if not empty_cells:
+                return self.heuristic_score(board)
+            
+            for (r, c) in empty_cells:
+                # Spawns a 2 (90% chance)
+                new_board_with_2 = [row[:] for row in board]
+                new_board_with_2[r][c] = 2
+                score_2 = self.expectimax(new_board_with_2, depth - 1, "PLAYER")
+                total_score += 0.9 * score_2
+
+                # Spawns a 4 (10% chance)
+                new_board_with_4 = [row[:] for row in board]
+                new_board_with_4[r][c] = 4
+                score_4 = self.expectimax(new_board_with_4, depth - 1, "PLAYER")
+                total_score += 0.1 * score_4
+
+            # Saves board depth and score so it doesn't have calculate this tree again
+            self.transposition_table[board_tuple] = {'depth': depth, 'score': total_score}
+
+            # Return average score
+            return total_score / len(empty_cells)
+
     def heuristic_score(self, board):
         snakeness = self.snake_score(board)
         snakeness_mult = 4
         empty_tile = len(self.get_empty_cells(board))
         empty_tile_mult = 50
-        corner_bonus = self.corner_score(board)
-        corner_bonus_mult = 2
         smoothness = self.smoothness(board)
         smoothness_mult = 1.3
         score = (snakeness * snakeness_mult) + (empty_tile * empty_tile_mult) + (smoothness * smoothness_mult)
