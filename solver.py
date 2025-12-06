@@ -68,47 +68,6 @@ class Solver:
         ],
         ]
 
-        self.SCORING_MATRICES_2 = [
-        # Top Left
-        [
-            [15, 12, 9,  6],
-            [12, 9,  6,  3],
-            [9,  6,  3,  2],
-            [6,  3,  2,  1]
-        ],
-
-        # Top Right
-        [
-            [6,  9,  12, 15],
-            [3,  6,  9,  12],
-            [2,  3,  6,  9],
-            [1,  2,  3,  6]
-        ],
-
-        # Bottom Left
-        [
-            [6,  3,  2,  1],
-            [9,  6,  3,  2],
-            [12, 9,  6,  3],
-            [15, 12, 9,  6]
-        ],
-       
-        # Bottom Right
-        [
-            [1,  2,  3,  6],
-            [2,  3,  6,  9],
-            [3,  6,  9,  12],
-            [6,  9,  12, 15]
-        ]
-        ]
-
-        self.WEIGHT_MATRIX_CORNER = [
-            [6, 3, 3, 6],
-            [3, 2, 2, 3],
-            [3, 2, 2, 3],
-            [6, 3, 3, 6]
-        ]
-
         self.MOVES = ["up", "down", "left", "right"]
 
     def get_best_move(self, board):
@@ -274,14 +233,6 @@ class Solver:
             if score > highest_score:
                 highest_score = score
         return highest_score
-    
-    def corner_score(self, board):
-        score = 0
-        for r in range(4):
-            for c in range(4):
-                if board[r][c] > 0:
-                    score += math.log2(board[r][c]) * self.WEIGHT_MATRIX_CORNER[r][c]
-        return score
     
     def smoothness(self, board):
         # Penalizes large jumps in value between tiles
